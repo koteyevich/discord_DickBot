@@ -114,7 +114,7 @@ namespace discord_DickBot
                                                                           (7 cm/2 = 3 coins (int rounding is taken in an account)) */
                     .Set(u => u.LastAttempt, ekaterinburgTodayUtc)
                     .Set(u => u.Username, name); /* cache name for leaderboards, because
-                                                               pulling the name from uids is literally impossible */
+                                                               pulling the name from uids is a recipe for a quick rate limit */
 
             if (isAdditionalAttempt)
             {
@@ -161,7 +161,7 @@ namespace discord_DickBot
             return userList;
         }
 
-        public async Task<List<User>> TopTenGlobal()
+        public async Task<List<User>> TopTenGlobal(ulong commandGuildId)
         {
             var filter = Builders<User>.Filter.Empty;
             var sort = Builders<User>.Sort.Descending(u => u.DickSize);
