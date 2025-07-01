@@ -61,51 +61,94 @@ namespace discord_DickBot
                 switch (result.result)
                 {
                     case DickSizeResult.AlreadyRolled:
-                        responseString = "**You've already rolled...**\n" +
-                                         $"Right now your pp = *{user.DickSize} cm (+0, nothing changed)*\n" +
-                                         $"Next attempt tomorrow!";
+                        responseString = "**:flushed: You've already rolled...**\n" +
+                                         $":eggplant: Right now your pp = *{user.DickSize} cm (+0, nothing changed)*\n" +
+                                         $":alarm_clock: Next attempt tomorrow!";
                         await command.RespondAsync(responseString, ephemeral: true);
                         return;
                     case DickSizeResult.LuckyRoll:
-                        responseString = "**Lucky roll!**\n";
+                        responseString = "**:four_leaf_clover: Lucky roll!**\n";
                         break;
                 }
 
                 responseString +=
-                    $"{user.Username}, your pp now = *{user.DickSize} cm ({(result.change >= 0 ? "+" : "-")}{Math.Abs(result.change)})*\n" +
-                    $"Now you have *{user.Coins} coins (+{Math.Abs(result.change) / 2})* \n" +
+                    $":eggplant: {user.Username}, your pp now = *{user.DickSize} cm ({(result.change >= 0 ? "+" : "-")}{Math.Abs(result.change)})*\n" +
+                    $":coin: Now you have *{user.Coins} coins (+{Math.Abs(result.change) / 2})* \n" +
                     $"Additional attempts left: *{user.AdditionalAttempts}*\n" +
-                    $"*You place {await db.TopPlacement(command.User.Id, (ulong)command.GuildId!)} place in the chat.*\n" +
-                    $"Next attempt tomorrow!";
+                    $":trophy: *You place {await db.TopPlacement(command.User.Id, (ulong)command.GuildId!)} place in the chat.*\n" +
+                    $":arrow_right_hook: Next attempt tomorrow!";
+            }
+
+            if (command.Data.Name == "top-dih")
+            {
+                var db = new Database();
+                var list = await db.TopTenChat((ulong)command.GuildId!);
+                StringBuilder sb = new StringBuilder();
+
+                sb.AppendLine("**Top 10 dih in chat**");
+                for (int i = 0; i < list.Count; i++)
+                {
+                    sb.AppendLine($"***[{i + 1}]*** *{list[i].Username} - {list[i].DickSize} cm*");
+                }
+
+                responseString = sb.ToString();
+            }
+
+            if (command.Data.Name == "global-dih")
+            {
+                var db = new Database();
+                var list = await db.TopTenGlobal((ulong)command.GuildId!);
+                StringBuilder sb = new StringBuilder();
+
+                sb.AppendLine("**Top 10 dih globally**");
+                for (int i = 0; i < list.Count; i++)
+                {
+                    sb.AppendLine($"***[{i + 1}]*** *{list[i].Username} - {list[i].DickSize} cm*");
+                }
+
+                responseString = sb.ToString();
             }
 
             await command.RespondAsync($"{responseString}", ephemeral: true);
         }
 
-        public static async Task Client_Ready()
+        private static async Task Client_Ready()
         {
             // Note: Names have to be all lowercase and match the regular expression ^[\w-]{3,32}$
             // Descriptions can have a max length of 100.
 
             // Let's do our global command
-            var globalCommand = new SlashCommandBuilder();
-            globalCommand.WithName("dih");
-            globalCommand.WithDescription("grow ur dih");
+            var dihCommand = new SlashCommandBuilder();
+            dihCommand.WithName("dih");
+            dihCommand.WithDescription("grow ur dih");
+
+            var topDihCommand = new SlashCommandBuilder();
+            topDihCommand.WithName("top-dih");
+            topDihCommand.WithDescription("top 10 dih in chat");
+
+            var globalDihCommand = new SlashCommandBuilder();
+            globalDihCommand.WithName("global-dih");
+            globalDihCommand.WithDescription("top 10 dih across all chats");
 
             try
             {
+                var guild = bot.GetGuild(1389602334136467546);
+
                 // With global commands we don't need the guild.
-                await bot.CreateGlobalApplicationCommandAsync(globalCommand.Build());
+                await bot.CreateGlobalApplicationCommandAsync(dihCommand.Build());
+                await bot.CreateGlobalApplicationCommandAsync(topDihCommand.Build());
+                await bot.CreateGlobalApplicationCommandAsync(globalDihCommand.Build());
+
+
+                await guild.CreateApplicationCommandAsync(dihCommand.Build());
+                await guild.CreateApplicationCommandAsync(topDihCommand.Build());
+                await guild.CreateApplicationCommandAsync(globalDihCommand.Build());
                 // Using the ready event is a simple implementation for the sake of the example. Suitable for testing and development.
                 // For a production bot, it is recommended to only run the CreateGlobalApplicationCommandAsync() once for each command.
             }
-            catch (ApplicationCommandException exception)
+            catch (Exception exception)
             {
-                // If our command was invalid, we should catch an ApplicationCommandException. This exception contains the path of the error as well as the error message. You can serialize the Error field in the exception to get a visual of where your error is.
-                string json = JsonConvert.SerializeObject(exception.Errors, Formatting.Indented);
-
-                // You can send this error somewhere or just print it to the console, for this example we're just going to print it.
-                Console.WriteLine(json);
+                Console.WriteLine(exception.ToString());
             }
         }
     }
